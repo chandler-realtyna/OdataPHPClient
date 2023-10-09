@@ -1,0 +1,10 @@
+{
+    "name": "realtyna/odata-php-client",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Realtyna\\OData\\": "src/"
+        }
+    },
+    "require": {}
+}
