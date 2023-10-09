@@ -6,7 +6,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Realtyna\OData\Exceptions\ODataHttpClientException;
 
-abstract class ODataHttpClient
+class ODataHttpClient
 {
     private string $baseUri;
     private string $apiKey;
@@ -26,6 +26,7 @@ abstract class ODataHttpClient
 
     /**
      * Authenticate using OAuth 2.0 and retrieve an access token.
+     * @throws ODataHttpClientException
      */
     private function authenticate(): void
     {
