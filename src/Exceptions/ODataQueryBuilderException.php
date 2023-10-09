@@ -2,7 +2,9 @@
 
 namespace Realtyna\OData\Exceptions;
 
-class ODataQueryBuilderException
+use Exception;
+
+class ODataQueryBuilderException extends Exception
 {
 
 }

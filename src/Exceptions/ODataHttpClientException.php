@@ -2,7 +2,9 @@
 
 namespace Realtyna\OData\Exceptions;
 
-class ODataHttpClientException
+use Exception;
+
+class ODataHttpClientException extends Exception
 {
 
 }

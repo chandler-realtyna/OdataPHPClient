@@ -4,6 +4,7 @@ namespace Realtyna\OData;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use Realtyna\OData\Exceptions\ODataHttpClientException;
 
 abstract class ODataHttpClient
 {
@@ -26,7 +27,7 @@ abstract class ODataHttpClient
     /**
      * Authenticate using OAuth 2.0 and retrieve an access token.
      */
-    private function authenticate()
+    private function authenticate(): void
     {
         try {
             $client = new Client();
@@ -44,13 +45,13 @@ abstract class ODataHttpClient
             $parsedResponse = json_decode($responseJson, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new \RuntimeException('Error parsing JSON response: ' . json_last_error_msg());
+                throw new ODataHttpClientException('Error parsing JSON response: ' . json_last_error_msg());
             }
 
             $this->accessToken = $parsedResponse['access_token'];
         } catch (GuzzleException $e) {
             // Handle authentication failure
-            throw new \RuntimeException('OAuth 2.0 authentication failed: ' . $e->getMessage());
+            throw new ODataHttpClientException('OAuth 2.0 authentication failed: ' . $e->getMessage());
         }
     }
 
@@ -60,8 +61,9 @@ abstract class ODataHttpClient
      * @param string $endpoint The API endpoint to request.
      *
      * @return array|null The parsed response data, or null on failure.
+     * @throws ODataHttpClientException|Exceptions\ODataResponseException
      */
-    public function get($endpoint)
+    public function get(string $endpoint): ?array
     {
         $this->authenticate();
 
@@ -80,7 +82,7 @@ abstract class ODataHttpClient
             return $this->responseParser->parseResponse($responseJson);
         } catch (GuzzleException $e) {
             // Handle HTTP request failure
-            throw new \RuntimeException('HTTP request failed: ' . $e->getMessage());
+            throw new OdataHttpClientException('HTTP request failed: ' . $e->getMessage());
         }
     }
 }
