@@ -56,14 +56,15 @@ class ODataResponseParser
      *
      * @return array An array of entity data, or an empty array if not found.
      */
-    public function extractEntities(?array $parsedResponse, string $entityType): array
+    public function extractEntities(?array $parsedResponse, string $entityType = 'array'): array
     {
         $entities = [];
-
         if (is_array($parsedResponse) && array_key_exists('value', $parsedResponse)) {
             foreach ($parsedResponse['value'] as $entity) {
-                if (isset($entity['@odata.type']) && $entity['@odata.type'] === '#' . $entityType) {
+                if($entityType == 'array') {
                     $entities[] = $entity;
+                }elseif(class_exists($entityType)){
+                    $entities[] = new $entityType($entity);
                 }
             }
         }
