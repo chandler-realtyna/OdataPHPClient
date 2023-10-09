@@ -110,6 +110,22 @@ class ODataQueryBuilder
     }
 
     /**
+     * Specify a group-by clause for the OData query.
+     *
+     * This method allows you to group the query results by a specified field.
+     *
+     * @param string $key The field by which to group the query results.
+     *
+     * @return $this Returns the current instance of the ODataQueryBuilder for method chaining.
+     */
+    public function groupBy(string $key): static
+    {
+        $this->queryOptions->groupBy($key);
+        return $this;
+    }
+
+
+    /**
      * Get the query options.
      *
      * @return ODataQueryOptions

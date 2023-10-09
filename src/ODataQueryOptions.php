@@ -9,6 +9,7 @@ class ODataQueryOptions
     private array $orderBy = [];
     private int $top = 20;
     private int $skip = 0;
+    private array $groupByFields = [];
 
     /**
      * Set the $select option for the query.
@@ -76,6 +77,20 @@ class ODataQueryOptions
     }
 
     /**
+     * Add a field to group by.
+     *
+     * @param string $field The field to group by.
+     *
+     * @return $this
+     */
+    public function groupBy(string $field): static
+    {
+        $this->groupByFields[] = $field;
+
+        return $this;
+    }
+
+    /**
      * Generate the query string with the specified options.
      *
      * @return string The formatted query string.
@@ -102,6 +117,10 @@ class ODataQueryOptions
 
         if ($this->skip !== 0) {
             $queryParts[] = '$skip=' . $this->skip;
+        }
+
+        if (!empty($this->groupByFields)) {
+            $queryParts[] = '$apply='. 'groupby(' . implode(',', $this->groupByFields) . ')';
         }
 
         return implode('&', $queryParts);
