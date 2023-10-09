@@ -86,4 +86,12 @@ class ODataHttpClient
             throw new OdataHttpClientException('HTTP request failed: ' . $e->getMessage());
         }
     }
+
+    /**
+     * @return ODataResponseParser
+     */
+    public function getResponseParser(): ODataResponseParser
+    {
+        return $this->responseParser;
+    }
 }
