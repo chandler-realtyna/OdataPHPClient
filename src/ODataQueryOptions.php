@@ -85,7 +85,7 @@ class ODataQueryOptions
      */
     public function groupBy(string $field): static
     {
-        $this->groupByFields[] = $field;
+        $this->groupByFields[] = "($field)";
 
         return $this;
     }
@@ -120,7 +120,7 @@ class ODataQueryOptions
         }
 
         if (!empty($this->groupByFields)) {
-            $queryParts[] = '$apply='. 'groupby(' . implode(',', $this->groupByFields) . ')';
+            $queryParts[] = '$apply='. 'groupby(' . implode(', ', $this->groupByFields) . ')';
         }
 
         return implode('&', $queryParts);
