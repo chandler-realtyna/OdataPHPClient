@@ -8,27 +8,40 @@ use Realtyna\OData\Exceptions\ODataResponseException;
 class ODataResponseParser
 {
     /**
-     * Parse the response JSON from the OData service.
+     * Parse the response content, which can be JSON or XML.
      *
-     * @param string $responseJson The JSON response from the OData service.
+     * @param string $response The response content (JSON or XML).
      *
      * @return array|null An array representing the parsed response data, or null on failure.
-     * @throws ODataResponseException
+     *
+     * @throws ODataResponseException If there's an error during parsing.
      */
-    public function parseResponse(string $responseJson): ?array
+    public function parseResponse(string $response): ?array
     {
-        try {
-            $data = json_decode($responseJson, true);
+        // Try to decode as JSON
+        $jsonData = json_decode($response, true);
 
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new ODataResponseException('Error parsing JSON response: ' . json_last_error_msg());
-            }
-
-            return $data;
-        } catch (Exception $e) {
-            // Handle any exceptions that may occur during parsing
-            throw $e;
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return $jsonData;
         }
+
+
+        $document = new \DOMDocument();
+        $document->loadXml($response);
+
+        $data[] = $this->domNodeToArray($document->documentElement);
+
+        if (!empty($data)) {
+            // Convert XML to an array
+            $jsonXml = json_encode($data);
+            $arrayData = json_decode($jsonXml, true);
+
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return $arrayData;
+            }
+        }
+
+        throw new ODataResponseException('Error parsing the response content.');
     }
 
     /**
@@ -70,5 +83,36 @@ class ODataResponseParser
         }
 
         return $entities;
+    }
+
+    function domNodeToArray($node) {
+        $nodesWithNephews = [];
+        if ($node->hasAttributes()) {
+            foreach ($node->attributes as $attr) {
+                $data['@' . $attr->name] = $attr->value;
+            }
+        }
+
+        if ($node->hasChildNodes()) {
+            foreach ($node->childNodes as $child) {
+                if ($child->nodeType === XML_ELEMENT_NODE) {
+                    if(isset($data[$child->nodeName])){
+                        $tmp = $data[$child->nodeName];
+                        if(!in_array($child->nodeName, $nodesWithNephews)){
+                            $data[$child->nodeName] = [];
+                            $data[$child->nodeName][] = $tmp;
+                        }
+                        $data[$child->nodeName][] = $this->domNodeToArray($child);
+                        $nodesWithNephews[] = $child->nodeName;
+                    }else{
+                        $data[$child->nodeName] = $this->domNodeToArray($child);
+                    }
+                } elseif ($child->nodeType === XML_TEXT_NODE) {
+                    $data = $child->nodeValue;
+                }
+            }
+        }
+
+        return $data;
     }
 }

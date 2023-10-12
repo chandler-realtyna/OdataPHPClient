@@ -78,9 +78,9 @@ class ODataHttpClient
             ]);
 
             $response = $client->get($endpoint);
-            $responseJson = $response->getBody()->getContents();
+            $response = $response->getBody()->getContents();
 
-            return $this->responseParser->parseResponse($responseJson);
+            return $this->responseParser->parseResponse($response);
         } catch (GuzzleException $e) {
             // Handle HTTP request failure
             throw new OdataHttpClientException('HTTP request failed: ' . $e->getMessage());
