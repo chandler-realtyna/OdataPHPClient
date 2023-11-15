@@ -108,7 +108,7 @@ class ODataQueryOptions
         }
 
         if (!empty($this->orderBy)) {
-            $queryParts[] = '$orderby=' . implode(',', $this->orderBy);
+            $queryParts[] = '$orderby=' . implode(' ', $this->orderBy);
         }
 
         if ($this->top !== 0) {
