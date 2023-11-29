@@ -36,6 +36,8 @@ class ODataQueryBuilder
             $this->filterBuilder->endswith($field, $value, $logical);
         } elseif ($function === 'length') {
             $this->filterBuilder->length($field, $value, $operator, $logical);
+        } elseif ($function === 'in') {
+            $this->filterBuilder->whereIn($field, $value, $logical);
         } else {
             $this->filterBuilder->where($field, $operator, $value, $logical);
         }

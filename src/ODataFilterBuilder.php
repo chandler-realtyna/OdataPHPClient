@@ -14,15 +14,19 @@ class ODataFilterBuilder
     /**
      * Add a filter condition.
      *
-     * @param array|string $field     The field to filter on, or an array of nested conditions.
-     * @param string|null $operator  The comparison operator (e.g., 'eq', 'ne', 'lt', 'gt', 'le', 'ge').
-     * @param mixed|null $value     The value to compare against (ignored when nested conditions are provided).
-     * @param string $logical   The logical operator ('and' or 'or') to combine with the previous condition.
+     * @param array|string $field The field to filter on, or an array of nested conditions.
+     * @param string|null $operator The comparison operator (e.g., 'eq', 'ne', 'lt', 'gt', 'le', 'ge').
+     * @param mixed|null $value The value to compare against (ignored when nested conditions are provided).
+     * @param string $logical The logical operator ('and' or 'or') to combine with the previous condition.
      *
      * @return $this
      */
-    public function where(array|string $field, string $operator = null, mixed $value = null, string $logical = 'and'): static
-    {
+    public function where(
+        array|string $field,
+        string $operator = null,
+        mixed $value = null,
+        string $logical = 'and'
+    ): static {
         if ($this->filterExpression !== '') {
             $this->filterExpression .= " $logical ";
         }
@@ -45,8 +49,8 @@ class ODataFilterBuilder
     /**
      * Build nested conditions from an array.
      *
-     * @param array  $conditions  An array of nested conditions.
-     * @param string $logical     The logical operator ('and' or 'or') to combine with the previous condition.
+     * @param array $conditions An array of nested conditions.
+     * @param string $logical The logical operator ('and' or 'or') to combine with the previous condition.
      *
      * @return string
      */
@@ -85,11 +89,11 @@ class ODataFilterBuilder
     /**
      * Escape a field name for use in the filter expression.
      *
-     * @param string $field
+     * @param string|array $field
      *
-     * @return string
+     * @return string|array
      */
-    private function escapeField(string $field): string
+    private function escapeField(string|array $field): string|array
     {
         // You may need to implement field escaping logic specific to your OData service.
         return $field;
@@ -113,11 +117,36 @@ class ODataFilterBuilder
     }
 
     /**
+     * Adds a WHERE IN clause to the filter expression.
+     *
+     * @param string $field   The field to filter on.
+     * @param array  $values  An array of values for the WHERE IN clause.
+     * @param string $logical The logical operator to use for combining with previous conditions (default: 'and').
+     *
+     * @return static $this
+     */
+    public function whereIn(string $field, array $values, string $logical = 'and'): static
+    {
+        if ($this->filterExpression !== '') {
+            $this->filterExpression .= " $logical ";
+        }
+
+        $escapedField = $this->escapeField($field);
+        $escapedValues = implode(', ', array_map([$this, 'escapeValue'], $values));
+
+        $this->filterExpression .= "$escapedField in ($escapedValues)";
+
+        return $this;
+    }
+
+
+
+    /**
      * Add a filter condition using the 'contains' function.
      *
-     * @param string $field     The field to filter on.
-     * @param mixed  $value     The substring to check for.
-     * @param string $logical   The logical operator ('and' or 'or') to combine with the previous condition.
+     * @param string $field The field to filter on.
+     * @param mixed $value The substring to check for.
+     * @param string $logical The logical operator ('and' or 'or') to combine with the previous condition.
      *
      * @return $this
      */
@@ -138,9 +167,9 @@ class ODataFilterBuilder
     /**
      * Add a filter condition using the 'substringof' function.
      *
-     * @param string $substring  The substring to check for.
-     * @param string $field      The field that should contain the substring.
-     * @param string $logical    The logical operator ('and' or 'or') to combine with the previous condition.
+     * @param string $substring The substring to check for.
+     * @param string $field The field that should contain the substring.
+     * @param string $logical The logical operator ('and' or 'or') to combine with the previous condition.
      *
      * @return $this
      */
@@ -161,9 +190,9 @@ class ODataFilterBuilder
     /**
      * Add a filter condition using the 'startswith' function.
      *
-     * @param string $field     The field to filter on.
+     * @param string $field The field to filter on.
      * @param string $substring The substring to check for at the beginning.
-     * @param string $logical   The logical operator ('and' or 'or') to combine with the previous condition.
+     * @param string $logical The logical operator ('and' or 'or') to combine with the previous condition.
      *
      * @return $this
      */
@@ -184,9 +213,9 @@ class ODataFilterBuilder
     /**
      * Add a filter condition using the 'endswith' function.
      *
-     * @param string $field     The field to filter on.
+     * @param string $field The field to filter on.
      * @param string $substring The substring to check for at the end.
-     * @param string $logical   The logical operator ('and' or 'or') to combine with the previous condition.
+     * @param string $logical The logical operator ('and' or 'or') to combine with the previous condition.
      *
      * @return $this
      */
@@ -207,10 +236,10 @@ class ODataFilterBuilder
     /**
      * Add a filter condition using the 'length' function.
      *
-     * @param string $field     The field whose length you want to check.
-     * @param int $length    The length to compare against.
+     * @param string $field The field whose length you want to check.
+     * @param int $length The length to compare against.
      * @param string $comparison The comparison operator ('eq', 'ne', 'lt', 'le', 'gt', 'ge').
-     * @param string $logical   The logical operator ('and' or 'or') to combine with the previous condition.
+     * @param string $logical The logical operator ('and' or 'or') to combine with the previous condition.
      *
      * @return $this
      */
