@@ -104,13 +104,16 @@ class ODataFilterBuilder
      *
      * @param mixed $value
      *
-     * @return string
      */
-    private function escapeValue(mixed $value): string
+    private function escapeValue(mixed $value)
     {
         // You may need to implement value escaping logic specific to your OData service.
         if (is_string($value)) {
             return "'" . addslashes($value) . "'";
+        }
+
+        if (is_array($value)) {
+            return implode(',', $value);
         }
 
         return $value;
