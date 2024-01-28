@@ -5,7 +5,7 @@ namespace Realtyna\OData;
 class ODataQueryBuilder
 {
     private string $baseUri;
-    private ODataFilterBuilder $filterBuilder;
+    public ODataFilterBuilder $filterBuilder;
     private ODataQueryOptions $queryOptions;
 
     public function __construct($baseUri)
@@ -44,6 +44,31 @@ class ODataQueryBuilder
 
         return $this;
     }
+
+
+
+    /**
+     * Open a filter group with a logical relation (AND/OR).
+     *
+     * @param string $relation The logical relation (AND/OR).
+     */
+    public function openFilter(string $relation = 'AND'): static
+    {
+        $this->filterBuilder->startGroup($relation);
+
+        return $this;
+    }
+
+    /**
+     * Close the current open filter group.
+     */
+    public function closeFilter(): static
+    {
+        $this->filterBuilder->endGroup();
+
+        return $this;
+    }
+
 
 
     /**

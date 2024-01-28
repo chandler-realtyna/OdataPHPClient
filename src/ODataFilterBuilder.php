@@ -5,6 +5,8 @@ namespace Realtyna\OData;
 class ODataFilterBuilder
 {
     private string $filterExpression;
+    private string $currentBoolean = 'and';
+    private string $state;
 
     public function __construct()
     {
@@ -27,9 +29,10 @@ class ODataFilterBuilder
         mixed $value = null,
         string $logical = 'and'
     ): static {
-        if ($this->filterExpression !== '') {
-            $this->filterExpression .= " $logical ";
+        if ($this->filterExpression !== '' && $this->state != 'started') {
+            $this->filterExpression .= " $this->currentBoolean ";
         }
+        $this->state = 'middle';
 
         if (is_array($field)) {
             // Handle nested conditions
@@ -42,6 +45,38 @@ class ODataFilterBuilder
 
             $this->filterExpression .= "$escapedField $operator $escapedValue";
         }
+
+        return $this;
+    }
+
+    /**
+     * Start a filter group.
+     *
+     * @param string $relation The logical relation (AND/OR) to combine with the previous condition.
+     *
+     * @return $this
+     */
+    public function startGroup($relation = 'AND'): static
+    {
+        $this->currentBoolean = $relation;
+        $this->state = 'started';
+        if ($this->filterExpression !== '') {
+            $this->filterExpression .= " AND (";
+        } else {
+            $this->filterExpression .= '(';
+        }
+
+        return $this;
+    }
+
+    /**
+     * End the current filter group.
+     *
+     * @return $this
+     */
+    public function endGroup(): static
+    {
+        $this->filterExpression .= ')';
 
         return $this;
     }
@@ -104,16 +139,13 @@ class ODataFilterBuilder
      *
      * @param mixed $value
      *
+     * @return string
      */
-    private function escapeValue(mixed $value)
+    private function escapeValue(mixed $value): string
     {
         // You may need to implement value escaping logic specific to your OData service.
         if (is_string($value)) {
             return "'" . addslashes($value) . "'";
-        }
-
-        if (is_array($value)) {
-            return implode(',', $value);
         }
 
         return $value;
@@ -141,8 +173,6 @@ class ODataFilterBuilder
 
         return $this;
     }
-
-
 
     /**
      * Add a filter condition using the 'contains' function.
