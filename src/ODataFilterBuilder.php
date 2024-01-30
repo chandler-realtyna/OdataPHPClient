@@ -141,11 +141,14 @@ class ODataFilterBuilder
      *
      * @return string
      */
-    private function escapeValue(mixed $value): string
+    private function escapeValue(mixed $value)
     {
         // You may need to implement value escaping logic specific to your OData service.
         if (is_string($value)) {
             return "'" . addslashes($value) . "'";
+        }
+        if (is_array($value)) {
+            return "'" . implode(',', $value) . "'";
         }
 
         return $value;
@@ -162,9 +165,10 @@ class ODataFilterBuilder
      */
     public function whereIn(string $field, array $values, string $logical = 'and'): static
     {
-        if ($this->filterExpression !== '') {
-            $this->filterExpression .= " $logical ";
+        if ($this->filterExpression !== '' && $this->state != 'started') {
+            $this->filterExpression .= " $this->currentBoolean ";
         }
+        $this->state = 'middle';
 
         $escapedField = $this->escapeField($field);
         $escapedValues = implode(', ', array_map([$this, 'escapeValue'], $values));
@@ -185,9 +189,10 @@ class ODataFilterBuilder
      */
     public function contains(string $field, mixed $value, string $logical = 'and'): static
     {
-        if ($this->filterExpression !== '') {
-            $this->filterExpression .= " $logical ";
+        if ($this->filterExpression !== '' && $this->state != 'started') {
+            $this->filterExpression .= " $this->currentBoolean ";
         }
+        $this->state = 'middle';
 
         $escapedField = $this->escapeField($field);
         $escapedValue = $this->escapeValue($value);
@@ -208,9 +213,10 @@ class ODataFilterBuilder
      */
     public function substringof(string $substring, string $field, string $logical = 'and'): static
     {
-        if ($this->filterExpression !== '') {
-            $this->filterExpression .= " $logical ";
+        if ($this->filterExpression !== '' && $this->state != 'started') {
+            $this->filterExpression .= " $this->currentBoolean ";
         }
+        $this->state = 'middle';
 
         $escapedField = $this->escapeField($field);
         $escapedSubstring = $this->escapeValue($substring);
@@ -231,9 +237,10 @@ class ODataFilterBuilder
      */
     public function startswith(string $field, string $substring, string $logical = 'and'): static
     {
-        if ($this->filterExpression !== '') {
-            $this->filterExpression .= " $logical ";
+        if ($this->filterExpression !== '' && $this->state != 'started') {
+            $this->filterExpression .= " $this->currentBoolean ";
         }
+        $this->state = 'middle';
 
         $escapedField = $this->escapeField($field);
         $escapedSubstring = $this->escapeValue($substring);
@@ -254,9 +261,10 @@ class ODataFilterBuilder
      */
     public function endswith(string $field, string $substring, string $logical = 'and'): static
     {
-        if ($this->filterExpression !== '') {
-            $this->filterExpression .= " $logical ";
+        if ($this->filterExpression !== '' && $this->state != 'started') {
+            $this->filterExpression .= " $this->currentBoolean ";
         }
+        $this->state = 'middle';
 
         $escapedField = $this->escapeField($field);
         $escapedSubstring = $this->escapeValue($substring);
@@ -278,9 +286,10 @@ class ODataFilterBuilder
      */
     public function length(string $field, int $length, string $comparison = 'eq', string $logical = 'and'): static
     {
-        if ($this->filterExpression !== '') {
-            $this->filterExpression .= " $logical ";
+        if ($this->filterExpression !== '' && $this->state != 'started') {
+            $this->filterExpression .= " $this->currentBoolean ";
         }
+        $this->state = 'middle';
 
         $escapedField = $this->escapeField($field);
 
