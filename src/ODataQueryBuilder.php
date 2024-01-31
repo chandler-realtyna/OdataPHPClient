@@ -30,6 +30,8 @@ class ODataQueryBuilder
     {
         if ($function === 'contains') {
             $this->filterBuilder->contains($field, $value, $logical);
+        } elseif ($function === 'distance') {
+            $this->filterBuilder->distance($field, $operator, $value, $logical);
         } elseif ($function === 'startswith') {
             $this->filterBuilder->startswith($field, $value, $logical);
         } elseif ($function === 'endswith') {
@@ -44,7 +46,6 @@ class ODataQueryBuilder
 
         return $this;
     }
-
 
 
     /**
@@ -68,7 +69,6 @@ class ODataQueryBuilder
 
         return $this;
     }
-
 
 
     /**

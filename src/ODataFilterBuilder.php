@@ -157,8 +157,8 @@ class ODataFilterBuilder
     /**
      * Adds a WHERE IN clause to the filter expression.
      *
-     * @param string $field   The field to filter on.
-     * @param array  $values  An array of values for the WHERE IN clause.
+     * @param string $field The field to filter on.
+     * @param array $values An array of values for the WHERE IN clause.
      * @param string $logical The logical operator to use for combining with previous conditions (default: 'and').
      *
      * @return static $this
@@ -201,6 +201,40 @@ class ODataFilterBuilder
 
         return $this;
     }
+
+    /**
+     * Adds a distance filter to the OData query expression.
+     *
+     * @param string $field The field representing coordinates in the data.
+     * @param string|null $operator The comparison operator for the distance filter (e.g., 'le' for less than or equal to).
+     * @param mixed $value The values for latitude, longitude, and radius in an associative array.
+     *                     Example: ['lat' => '37.9020731', 'long' => '-122.0618702', 'radius' => '10']
+     * @param string $logical The logical operator to use for combining with other conditions (default is 'and').
+     *
+     * @return static Returns an instance of the ODataQueryBuilder for method chaining.
+     */
+    public function distance(string $field, string $operator = null, mixed $value, string $logical = 'and'): static
+    {
+        if ($this->filterExpression !== '' && $this->state != 'started') {
+            $this->filterExpression .= " $this->currentBoolean ";
+        }
+        $this->state = 'middle';
+
+        // If latitude, longitude, and radius are not set, no distance filter is applied
+        if (!isset($value['lat']) && !isset($value['long']) && !isset($value['radius'])) {
+            return $this;
+        }
+
+        $escapedLat = $this->escapeValue($value['lat']);
+        $escapedLong = $this->escapeValue($value['long']);
+        $radius = $this->escapeValue($value['radius']);
+
+        $this->filterExpression .= "geo.distance($field, POINT($escapedLong $escapedLat)) $operator $radius";
+
+        return $this;
+    }
+
+
 
     /**
      * Add a filter condition using the 'substringof' function.
