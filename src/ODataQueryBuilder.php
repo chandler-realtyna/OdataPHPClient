@@ -28,8 +28,11 @@ class ODataQueryBuilder
      */
     public function addFilter($field, $operator, $value, $logical = 'and', $function = null): static
     {
+
         if ($function === 'contains') {
             $this->filterBuilder->contains($field, $value, $logical);
+        } elseif ($function === 'intersects') {
+            $this->filterBuilder->intersects($field, $value, $logical);
         } elseif ($function === 'distance') {
             $this->filterBuilder->distance($field, $operator, $value, $logical);
         } elseif ($function === 'startswith') {

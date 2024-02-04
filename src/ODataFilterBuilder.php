@@ -144,9 +144,14 @@ class ODataFilterBuilder
     private function escapeValue(mixed $value)
     {
         // You may need to implement value escaping logic specific to your OData service.
+        if (is_numeric($value)) {
+            return $value;
+        }
+
         if (is_string($value)) {
             return "'" . addslashes($value) . "'";
         }
+
         if (is_array($value)) {
             return "'" . implode(',', $value) . "'";
         }
@@ -227,13 +232,61 @@ class ODataFilterBuilder
 
         $escapedLat = $this->escapeValue($value['lat']);
         $escapedLong = $this->escapeValue($value['long']);
-        $radius = $this->escapeValue($value['radius']);
+        $radius = $value['radius'];
 
         $this->filterExpression .= "geo.distance($field, POINT($escapedLong $escapedLat)) $operator $radius";
 
         return $this;
     }
 
+
+    /**
+     * Adds a intersects filter to the OData query expression.
+     *
+     * @param string $field The field representing coordinates in the data.
+     * @param array $polygonCoordinates An array of associative arrays representing the coordinates of the polygon.
+     *                                 Example: [['lat' => '33.81125', 'long' => '-118.9999'], ...]
+     * @param string $logical The logical operator to use for combining with other conditions (default is 'and').
+     *
+     * @return static Returns an instance of the ODataQueryBuilder for method chaining.
+     */
+    public function intersects(string $field, array $polygonCoordinates, string $logical = 'and'): static
+    {
+        if ($this->filterExpression !== '' && $this->state != 'started') {
+            $this->filterExpression .= " $this->currentBoolean ";
+        }
+        $this->state = 'middle';
+
+        // If polygon coordinates are not set, no intersects filter is applied
+        if (empty($polygonCoordinates)) {
+            return $this;
+        }
+
+        $escapedPolygon = $this->escapePolygon($polygonCoordinates);
+        $this->filterExpression .= "geo.intersects($field, POLYGON(($escapedPolygon)))";
+
+        return $this;
+    }
+
+    /**
+     * Escape polygon coordinates for use in OData query expression.
+     *
+     * @param array $polygonCoordinates An array of associative arrays representing the coordinates of the polygon.
+     *
+     * @return string Escaped polygon coordinates string.
+     */
+    private function escapePolygon(array $polygonCoordinates): string
+    {
+        $escapedCoordinates = [];
+
+        foreach ($polygonCoordinates as $coordinate) {
+            $escapedLat = $this->escapeValue($coordinate['lat']);
+            $escapedLong = $this->escapeValue($coordinate['long']);
+            $escapedCoordinates[] = "$escapedLong $escapedLat";
+        }
+
+        return implode(',', $escapedCoordinates);
+    }
 
 
     /**
