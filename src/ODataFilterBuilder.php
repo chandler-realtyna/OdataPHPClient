@@ -209,6 +209,19 @@ class ODataFilterBuilder
         return $this;
     }
 
+
+    public function raw(string $field): static
+    {
+        if ($this->filterExpression !== '' && $this->state != 'started') {
+            $this->filterExpression .= $this->getCurrentBoolean();
+        }
+        $this->state = 'middle';
+
+        $this->filterExpression .= "$field";
+
+        return $this;
+    }
+
     /**
      * Adds a distance filter to the OData query expression.
      *
