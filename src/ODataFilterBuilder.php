@@ -5,7 +5,7 @@ namespace Realtyna\OData;
 class ODataFilterBuilder
 {
     private string $filterExpression;
-    private string $currentBoolean = 'and';
+    private array $currentBoolean = [];
     private string $state;
 
     public function __construct()
@@ -30,7 +30,7 @@ class ODataFilterBuilder
         string $logical = 'and'
     ): static {
         if ($this->filterExpression !== '' && $this->state != 'started') {
-            $this->filterExpression .= " $this->currentBoolean ";
+            $this->filterExpression .= $this->getCurrentBoolean();
         }
         $this->state = 'middle';
 
@@ -56,15 +56,16 @@ class ODataFilterBuilder
      *
      * @return $this
      */
-    public function startGroup($relation = 'AND'): static
+    public function startGroup(string $relation = 'AND'): static
     {
-        $this->currentBoolean = $relation;
         $this->state = 'started';
-        if ($this->filterExpression !== '') {
-            $this->filterExpression .= " AND (";
+        if ($this->filterExpression !== '' and $this->filterExpression !== '(') {
+            $operator = $this->getCurrentBoolean();
+            $this->filterExpression .= "$operator(";
         } else {
             $this->filterExpression .= '(';
         }
+        $this->currentBoolean[] = $relation;
 
         return $this;
     }
@@ -77,6 +78,7 @@ class ODataFilterBuilder
     public function endGroup(): static
     {
         $this->filterExpression .= ')';
+        array_pop($this->currentBoolean);
 
         return $this;
     }
@@ -171,7 +173,7 @@ class ODataFilterBuilder
     public function whereIn(string $field, array $values, string $logical = 'and'): static
     {
         if ($this->filterExpression !== '' && $this->state != 'started') {
-            $this->filterExpression .= " $this->currentBoolean ";
+            $this->filterExpression .= $this->getCurrentBoolean();
         }
         $this->state = 'middle';
 
@@ -195,7 +197,7 @@ class ODataFilterBuilder
     public function contains(string $field, mixed $value, string $logical = 'and'): static
     {
         if ($this->filterExpression !== '' && $this->state != 'started') {
-            $this->filterExpression .= " $this->currentBoolean ";
+            $this->filterExpression .= $this->getCurrentBoolean();
         }
         $this->state = 'middle';
 
@@ -221,7 +223,7 @@ class ODataFilterBuilder
     public function distance(string $field, string $operator = null, mixed $value, string $logical = 'and'): static
     {
         if ($this->filterExpression !== '' && $this->state != 'started') {
-            $this->filterExpression .= " $this->currentBoolean ";
+            $this->filterExpression .= $this->getCurrentBoolean();
         }
         $this->state = 'middle';
 
@@ -253,7 +255,7 @@ class ODataFilterBuilder
     public function intersects(string $field, array $polygonCoordinates, string $logical = 'and'): static
     {
         if ($this->filterExpression !== '' && $this->state != 'started') {
-            $this->filterExpression .= " $this->currentBoolean ";
+            $this->filterExpression .= $this->getCurrentBoolean();
         }
         $this->state = 'middle';
 
@@ -301,7 +303,7 @@ class ODataFilterBuilder
     public function substringof(string $substring, string $field, string $logical = 'and'): static
     {
         if ($this->filterExpression !== '' && $this->state != 'started') {
-            $this->filterExpression .= " $this->currentBoolean ";
+            $this->filterExpression .= $this->getCurrentBoolean();
         }
         $this->state = 'middle';
 
@@ -325,7 +327,7 @@ class ODataFilterBuilder
     public function startswith(string $field, string $substring, string $logical = 'and'): static
     {
         if ($this->filterExpression !== '' && $this->state != 'started') {
-            $this->filterExpression .= " $this->currentBoolean ";
+            $this->filterExpression .= $this->getCurrentBoolean();
         }
         $this->state = 'middle';
 
@@ -349,7 +351,7 @@ class ODataFilterBuilder
     public function endswith(string $field, string $substring, string $logical = 'and'): static
     {
         if ($this->filterExpression !== '' && $this->state != 'started') {
-            $this->filterExpression .= " $this->currentBoolean ";
+            $this->filterExpression .= $this->getCurrentBoolean();
         }
         $this->state = 'middle';
 
@@ -374,7 +376,7 @@ class ODataFilterBuilder
     public function length(string $field, int $length, string $comparison = 'eq', string $logical = 'and'): static
     {
         if ($this->filterExpression !== '' && $this->state != 'started') {
-            $this->filterExpression .= " $this->currentBoolean ";
+            $this->filterExpression .= $this->getCurrentBoolean();
         }
         $this->state = 'middle';
 
@@ -383,5 +385,16 @@ class ODataFilterBuilder
         $this->filterExpression .= "length($escapedField) $comparison $length";
 
         return $this;
+    }
+
+
+    private function getCurrentBoolean(): string
+    {
+        $value = end($this->currentBoolean);
+
+        if ($value == null) {
+            $value = 'AND';
+        }
+        return " $value ";
     }
 }
