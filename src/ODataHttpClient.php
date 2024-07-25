@@ -4,56 +4,21 @@ namespace Realtyna\OData;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Psr7\Request;
 use Realtyna\OData\Exceptions\ODataHttpClientException;
+use Realtyna\OData\Interfaces\AuthenticatorInterface;
 
 class ODataHttpClient
 {
     private string $baseUri;
-    private string $apiKey;
-    private string $clientId;
-    private string $clientSecret;
-    private string $accessToken;
     private ODataResponseParser $responseParser;
+    private AuthenticatorInterface $authenticator;
 
-    public function __construct($baseUri, $apiKey, $clientId, $clientSecret)
+    public function __construct($baseUri, AuthenticatorInterface $authenticator)
     {
         $this->baseUri = $baseUri;
-        $this->apiKey = $apiKey;
-        $this->clientId = $clientId;
-        $this->clientSecret = $clientSecret;
         $this->responseParser = new ODataResponseParser();
-    }
-
-    /**
-     * Authenticate using OAuth 2.0 and retrieve an access token.
-     * @throws ODataHttpClientException
-     */
-    private function authenticate(): void
-    {
-        try {
-            $client = new Client();
-
-            $response = $client->post('https://realtyfeed-sso.auth.us-east-1.amazoncognito.com/oauth2/token', [
-                'form_params' => [
-                    'grant_type' => 'client_credentials',
-                    'client_id' => $this->clientId,
-                    'client_secret' => $this->clientSecret,
-                    'scope' => 'api/read',
-                ],
-            ]);
-
-            $responseJson = $response->getBody()->getContents();
-            $parsedResponse = json_decode($responseJson, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new ODataHttpClientException('Error parsing JSON response: ' . json_last_error_msg());
-            }
-
-            $this->accessToken = $parsedResponse['access_token'];
-        } catch (GuzzleException $e) {
-            // Handle authentication failure
-            throw new ODataHttpClientException('OAuth 2.0 authentication failed: ' . $e->getMessage());
-        }
+        $this->authenticator = $authenticator;
     }
 
     /**
@@ -66,24 +31,18 @@ class ODataHttpClient
      */
     public function get(string $endpoint): ?array
     {
-        $this->authenticate();
+        $request = new Request('GET', $this->baseUri . $endpoint);
+
+        $authenticatedRequest = $this->authenticator->authenticate($request);
 
         try {
-            $client = new Client([
-                'base_uri' => $this->baseUri,
-                'headers' => [
-                    'x-api-key' => $this->apiKey,
-                    'Authorization' => 'Bearer ' . $this->accessToken,
-                ],
-            ]);
-
-            $response = $client->get($endpoint);
+            $client = new Client();
+            $response = $client->send($authenticatedRequest);
             $response = $response->getBody()->getContents();
 
             return $this->responseParser->parseResponse($response);
         } catch (GuzzleException $e) {
-            // Handle HTTP request failure
-            throw new OdataHttpClientException('HTTP request failed: ' . $e->getMessage());
+            throw new ODataHttpClientException('HTTP request failed: ' . $e->getMessage());
         }
     }
 
