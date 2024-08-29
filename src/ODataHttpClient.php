@@ -2,9 +2,6 @@
 
 namespace Realtyna\OData;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Psr7\Request;
 use Realtyna\OData\Exceptions\ODataHttpClientException;
 use Realtyna\OData\Interfaces\AuthenticatorInterface;
 
@@ -27,23 +24,62 @@ class ODataHttpClient
      * @param string $endpoint The API endpoint to request.
      *
      * @return array|null The parsed response data, or null on failure.
-     * @throws ODataHttpClientException|Exceptions\ODataResponseException
+     * @throws ODataHttpClientException
      */
     public function get(string $endpoint): ?array
     {
-        $request = new Request('GET', $this->baseUri . $endpoint);
+        // Base URL and endpoint
+        $baseUri = $this->baseUri;
 
-        $authenticatedRequest = $this->authenticator->authenticate($request);
+// Separate the path from the query string
+        $parsed_url = parse_url($endpoint);
+        $path = $parsed_url['path'];
+        $query_string = isset($parsed_url['query']) ? $parsed_url['query'] : '';
 
-        try {
-            $client = new Client();
-            $response = $client->send($authenticatedRequest);
-            $response = $response->getBody()->getContents();
+// Encode the query string
+        parse_str($query_string, $query_params);
+        $encoded_query_string = http_build_query($query_params, '', '&', PHP_QUERY_RFC3986);
 
-            return $this->responseParser->parseResponse($response);
-        } catch (GuzzleException $e) {
-            throw new ODataHttpClientException('HTTP request failed: ' . $e->getMessage());
+// Reconstruct the full URL
+        $url = $baseUri . $path . '?' . $encoded_query_string;
+
+        $response = wp_remote_get($url, [
+            'headers' => $this->authenticator->getHeaders(),
+        ]);
+
+
+
+        if (is_wp_error($response)) {
+            throw new ODataHttpClientException($response->get_error_message());
         }
+
+        $body = wp_remote_retrieve_body($response);
+        return $this->responseParser->parseResponse($body);
+    }
+
+    /**
+     * Send an authenticated HTTP POST request.
+     *
+     * @param string $endpoint The API endpoint to request.
+     * @param array $data The data to send in the request body.
+     *
+     * @return array|null The parsed response data, or null on failure.
+     * @throws ODataHttpClientException
+     */
+    public function post(string $endpoint, array $data): ?array
+    {
+        $url = $this->baseUri . $endpoint;
+        $response = wp_remote_post($url, [
+            'headers' => $this->authenticator->getHeaders(),
+            'body'    => wp_json_encode($data),
+        ]);
+
+        if (is_wp_error($response)) {
+            throw new ODataHttpClientException($response->get_error_message());
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        return $this->responseParser->parseResponse($body);
     }
 
     /**
