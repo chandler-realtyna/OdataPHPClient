@@ -31,31 +31,37 @@ class ODataHttpClient
         // Base URL and endpoint
         $baseUri = $this->baseUri;
 
-// Separate the path from the query string
+        // Separate the path from the query string
         $parsed_url = parse_url($endpoint);
         $path = $parsed_url['path'];
         $query_string = isset($parsed_url['query']) ? $parsed_url['query'] : '';
 
-// Encode the query string
+        // Encode the query string
         parse_str($query_string, $query_params);
         $encoded_query_string = http_build_query($query_params, '', '&', PHP_QUERY_RFC3986);
 
-// Reconstruct the full URL
+        // Reconstruct the full URL
         $url = $baseUri . $path . '?' . $encoded_query_string;
 
         $response = wp_remote_get($url, [
             'headers' => $this->authenticator->getHeaders(),
         ]);
 
-
-
         if (is_wp_error($response)) {
             throw new ODataHttpClientException($response->get_error_message());
         }
 
+        // Check the HTTP status code
+        $status_code = wp_remote_retrieve_response_code($response);
         $body = wp_remote_retrieve_body($response);
+
+        if ($status_code !== 200) {
+            throw new ODataHttpClientException("Request to $url failed with status code: $status_code. Response body: $body");
+        }
+
         return $this->responseParser->parseResponse($body);
     }
+
 
     /**
      * Send an authenticated HTTP POST request.
